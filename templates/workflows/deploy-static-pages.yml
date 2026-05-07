@@ -1,0 +1,59 @@
+name: Deploy static staging app to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  STAGING_SUBDOMAIN: your-subdomain
+  STAGING_DOMAIN: your-subdomain.staging.maximisedai.com
+  BUILD_COMMAND: |
+    mkdir -p dist
+    cp index.html dist/
+    if [ -d assets ]; then cp -R assets dist/; fi
+    if [ -d pages ]; then cp -R pages dist/; fi
+  BUILD_OUTPUT: dist
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Build static output
+        run: ${{ env.BUILD_COMMAND }}
+
+      - name: Write CNAME
+        run: echo "${{ env.STAGING_DOMAIN }}" > "${{ env.BUILD_OUTPUT }}/CNAME"
+
+      - name: Validate Pages output
+        run: |
+          test -d "${{ env.BUILD_OUTPUT }}"
+          test -f "${{ env.BUILD_OUTPUT }}/index.html"
+          test -f "${{ env.BUILD_OUTPUT }}/CNAME"
+          test "$(cat "${{ env.BUILD_OUTPUT }}/CNAME")" = "${{ env.STAGING_DOMAIN }}"
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ env.BUILD_OUTPUT }}
+
+      - name: Deploy Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

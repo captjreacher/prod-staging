@@ -1,0 +1,17 @@
+# Registry of approved 1-shot staging apps.
+# One repo should map to one staging subdomain.
+#
+# Schema:
+# - repo: GitHub repository in owner/name form.
+# - subdomain: Approved left-hand label under staging.maximisedai.com.
+# - domain: Full staging domain for the app.
+# - type: Build type such as static, vite, hugo, astro, next-static, or wordpress-static.
+# - status: active, pending, retired, or blocked.
+# - notes: Short human-readable context.
+sites:
+  - repo: captjreacher/petfilth
+    subdomain: petfilth
+    domain: petfilth.staging.maximisedai.com
+    type: vite
+    status: active
+    notes: Initial 1-shot app staging example.

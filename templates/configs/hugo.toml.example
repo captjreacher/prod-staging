@@ -1,0 +1,3 @@
+baseURL = "https://your-subdomain.staging.maximisedai.com/"
+languageCode = "en-us"
+title = "1-shot staging app"

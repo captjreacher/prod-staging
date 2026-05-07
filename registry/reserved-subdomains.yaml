@@ -1,0 +1,23 @@
+reserved:
+  - www
+  - root
+  - app
+  - api
+  - admin
+  - cockpit
+  - paperclip
+  - mgrnz
+  - maximisedai
+  - engagegroovy
+  - funkmybrand
+  - playercard
+  - prod
+  - production
+  - staging
+  - dev
+  - test
+  - mail
+  - smtp
+  - imap
+  - cpanel
+  - ftp

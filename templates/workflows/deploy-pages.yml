@@ -1,0 +1,79 @@
+name: Deploy staging app to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  STAGING_SUBDOMAIN: your-subdomain
+  STAGING_DOMAIN: your-subdomain.staging.maximisedai.com
+  BUILD_COMMAND: npm run build
+  BUILD_OUTPUT: dist
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          elif [ -f package.json ]; then
+            npm install
+          else
+            echo "No package.json found; skipping dependency install."
+          fi
+
+      - name: Build
+        run: ${{ env.BUILD_COMMAND }}
+
+      - name: Write CNAME
+        run: echo "${{ env.STAGING_DOMAIN }}" > "${{ env.BUILD_OUTPUT }}/CNAME"
+
+      - name: Validate Pages output
+        run: |
+          test -d "${{ env.BUILD_OUTPUT }}"
+          test -f "${{ env.BUILD_OUTPUT }}/index.html"
+          test -f "${{ env.BUILD_OUTPUT }}/CNAME"
+          test "$(cat "${{ env.BUILD_OUTPUT }}/CNAME")" = "${{ env.STAGING_DOMAIN }}"
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ env.BUILD_OUTPUT }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

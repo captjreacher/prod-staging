@@ -1,0 +1,69 @@
+name: Deploy Next.js static staging app to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  STAGING_SUBDOMAIN: your-subdomain
+  STAGING_DOMAIN: your-subdomain.staging.maximisedai.com
+  BUILD_COMMAND: npm run build
+  BUILD_OUTPUT: out
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build static export
+        run: ${{ env.BUILD_COMMAND }}
+
+      - name: Verify static-only output
+        run: |
+          test -d "${{ env.BUILD_OUTPUT }}"
+          echo "This template is only for Next.js static export, not SSR, API routes, or server actions."
+
+      - name: Write CNAME
+        run: echo "${{ env.STAGING_DOMAIN }}" > "${{ env.BUILD_OUTPUT }}/CNAME"
+
+      - name: Validate Pages output
+        run: |
+          test -d "${{ env.BUILD_OUTPUT }}"
+          test -f "${{ env.BUILD_OUTPUT }}/index.html"
+          test -f "${{ env.BUILD_OUTPUT }}/CNAME"
+          test "$(cat "${{ env.BUILD_OUTPUT }}/CNAME")" = "${{ env.STAGING_DOMAIN }}"
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ env.BUILD_OUTPUT }}
+
+      - name: Deploy Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
